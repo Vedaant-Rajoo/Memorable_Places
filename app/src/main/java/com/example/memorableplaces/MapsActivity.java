@@ -99,44 +99,57 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 }
             };
-
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0,locationListener);
-                Location lastKnownLocation =  locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                centerMapOnLocation(lastKnownLocation,"Your Location");
-            }else {
-                ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1 );
+                Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                centerMapOnLocation(lastKnownLocation, "Your Location");
+            } else {
+                ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1);
             }
+        } else {
+            Location placeLocation = new Location(LocationManager.GPS_PROVIDER);
+            placeLocation.setLatitude(MainActivity.locations.get(intent.getIntExtra("placeNumber",0)).latitude);
+            placeLocation.setLongitude(MainActivity.locations.get(intent.getIntExtra("placeNumber",0)).longitude);
+
+            centerMapOnLocation(placeLocation, (MainActivity.places.get(intent.getIntExtra("placeNumber",0))).toString());
         }
-
     }
-
     @Override
     public void onMapLongClick(LatLng latLng) {
 
         Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
-        String address = "";
-        try{
-            List<Address> listAddresses = geocoder.getFromLocation(latLng.latitude,latLng.longitude,1);
-            if (listAddresses != null && listAddresses.size() > 0) {
-                if (listAddresses.get(0).getThoroughfare() != null) {
-                    if (listAddresses.get(0).getSubThoroughfare() != null) {
-                        address += listAddresses.get(0).getSubThoroughfare() + " ";
-                    }
-                    address += listAddresses.get(0).getThoroughfare();
-                }
 
+        String address = "";
+
+        try {
+
+            List<Address> listAdddresses = geocoder.getFromLocation(latLng.latitude,latLng.longitude,1);
+
+            if (listAdddresses != null && listAdddresses.size() > 0) {
+                if (listAdddresses.get(0).getThoroughfare() != null) {
+                    if (listAdddresses.get(0).getSubThoroughfare() != null) {
+                        address += listAdddresses.get(0).getSubThoroughfare() + " ";
+                    }
+                    address += listAdddresses.get(0).getThoroughfare();
+                }
             }
 
-        } catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
-        if(address.equals("")){
+        if (address.equals("")) {
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm yyyy-MM-dd");
-            address+=sdf.format(new Date());
+            address += sdf.format(new Date());
         }
+
         mMap.addMarker(new MarkerOptions().position(latLng).title(address));
+
+        MainActivity.places.add(address);
+        MainActivity.locations.add(latLng);
+
+        MainActivity.arrayAdapter.notifyDataSetChanged();
+
+        Toast.makeText(this,"Location Saved!",Toast.LENGTH_SHORT).show();
     }
 }
